@@ -112,4 +112,4 @@ Serial settings: `115200 8N1`, no flow control.
 - **Verified live on hardware (`v2.0.1`):**
   - Stock `ZX279128S` `SMCT` (`11/11/128`), `UOPC` empty-resume (`0x1d8000 |= 8`), `0x380028 = 0x01070104`, `0x3a0028 = 1600`, SMP `TX_DONE_CNT` reclaim barrier, and `skb_reset_mac_header()` order fix in `zx_idm_poll()`.
   - **WAN ↔ 5 GHz Wi-Fi `iperf3` (`HE80`):** **440 Mbps UL** (`786 MB` / 15 s) and **476 Mbps avg / 589 Mbps peak DL** (`852 MB` / 15 s), `idm_rx_pkts=1,203,092`, `idm_tx_l3=592,062`, `idm_rx_drop=0`, `ppe_add_skip=0`, `hw_resets=0`, SoC `63 °C`.
-  - **WAN ↔ 5 GHz Wi-Fi `iperf3` (`HE160`, Intel AX210):** **~940 Mbps Gigabit line-rate UL** and **700 Mbps peak DL** (`600–700 Mbps` DL on 160 MHz phone).
+  - **WAN ↔ 5 GHz Wi-Fi `iperf3` (`HE160`, Intel AX210):** **579 Mbps avg / 700 Mbps peak DL** and **414 Mbps UL** (`600–700 Mbps` DL on 160 MHz phone). *(Stock `V9.1.10P2N7` baseline on same AX210 setup: `940 Mbps` single-port / `1.76 Gbps` dual-port DL, `902 Mbps` single-port / `1.08 Gbps` dual-port UL.)*
