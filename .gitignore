@@ -1,0 +1,14 @@
+# Large SPI-NAND flash backups, vendor binaries & personal router configs
+backup_*/
+audit/
+out/
+*.bin
+*.uImage
+*.img
+*.dtb
+*.tar.gz
+*.zip
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db

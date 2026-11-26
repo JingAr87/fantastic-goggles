@@ -1,0 +1,31 @@
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+dlink,dir-x1860z)
+	ucidef_set_led_netdev "internet" "Internet" "dir-x1860z:green:internet" "wan" "link tx rx"
+	ucidef_set_led_netdev "wlan" "Wi-Fi" "dir-x1860z:green:wlan" "phy0-ap0" "link tx rx"
+	;;
+dlink,dir-x3060z)
+	ucidef_set_led_netdev "internet" "Internet" "dir-x3060z:green:internet" "wan" "link tx rx"
+	ucidef_set_led_netdev "wlan" "Wi-Fi" "dir-x3060z:green:wlan" "phy0-ap0" "link tx rx"
+	;;
+zte,zxhn-f6600p)
+	ucidef_set_led_default "power" "Power" "f6600p:green:power" "1"
+	ucidef_set_led_netdev "internet" "Internet" "f6600p:green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "lan1" "LAN1" "f6600p:green:lan1" "wan" "link tx rx"
+	ucidef_set_led_netdev "lan2" "LAN2" "f6600p:green:lan2" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan3" "LAN3" "f6600p:green:lan3" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan4" "LAN4" "f6600p:green:lan4" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wlan" "Wi-Fi 2.4G" "f6600p:green:wlan" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "Wi-Fi 5G" "f6600p:green:wlan5g" "phy1-ap0" "link tx rx"
+	ucidef_set_led_usbport "usb" "USB" "f6600p:green:usb" "usb1-port1" "usb2-port1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

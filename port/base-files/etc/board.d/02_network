@@ -1,0 +1,61 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+
+# Read factory MAC addresses from the JFFS2 "tagparam" partition (/tagparam/paramtag):
+#   D-Link DIR-X1860Z/X3060Z: LAN @ +54 (0x36), WAN @ +66 (0x42)
+#   ZTE ZXHN F6600P:          LAN @ +98 (0x62), WAN @ +110 (0x6e)
+zte_setup_macs() {
+	local lan_off="$1" wan_off="$2"
+	local part dir=/tmp/tagparam_mnt lan_mac wan_mac
+
+	part=$(find_mtd_part tagparam)
+	[ -n "$part" ] || return
+
+	mkdir -p $dir
+	if ! grep -qs " $dir " /proc/mounts; then
+		mount -t jffs2 $part $dir 2>/dev/null || {
+			rmdir $dir 2>/dev/null
+			return
+		}
+	fi
+
+	if [ -f "$dir/paramtag" ]; then
+		lan_mac=$(hexdump -v -s "$lan_off" -n 6 -e '5/1 "%02x:" 1/1 "%02x"' "$dir/paramtag" 2>/dev/null)
+		wan_mac=$(hexdump -v -s "$wan_off" -n 6 -e '5/1 "%02x:" 1/1 "%02x"' "$dir/paramtag" 2>/dev/null)
+	fi
+
+	umount $dir 2>/dev/null
+	rmdir $dir 2>/dev/null
+
+	[ -n "$lan_mac" ] && [ "$lan_mac" != "ff:ff:ff:ff:ff:ff" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
+	[ -n "$wan_mac" ] && [ "$wan_mac" != "ff:ff:ff:ff:ff:ff" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"
+}
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+dlink,dir-x1860z|\
+dlink,dir-x3060z)
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	zte_setup_macs 54 66
+	;;
+zte,zxhn-f6600p)
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	zte_setup_macs 98 110
+	;;
+zte,zxhn-e2631)
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	;;
+*)
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+	;;
+esac
+
+board_config_flush
+
+exit 0

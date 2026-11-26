@@ -1,0 +1,466 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/*
+ * ZTE ZXHN F6600P (HW V9.1.41, TM / Unifi Malaysia AX3000 GPON ONT)
+ * SoC       : Sanechips / ZTE ZX279128S (cputype=3, dual Cortex-A9 @ 1 GHz, no VFP/NEON)
+ * RAM       : 256 MiB DDR3 (0x40000000..0x4fffffff)
+ * Flash     : 128 MiB 3.3V SPI-NAND (2 KiB page, 128 KiB eraseblock)
+ * Wi-Fi     : MediaTek Filogic 630 (MT7916AN, PCIe0 14c3:7906 + PCIe1 14c3:790a)
+ * Ethernet  : 4x integrated Sanechips GbE PHYs at MDIO 0xa..0xd (uni_phy = {0a, 0b, 0c, 0d})
+ * USB       : USB 2.0 / 3.0 host (dwc3 @ 0x09100000)
+ * Bootloader: U-Boot V9.1.10P10N9 (20250904100727, non-secure, 0x168 header + JFFS2 /0uImage)
+ *
+ * All memory addresses, MTD partition offsets (vmlinux.bin @ 0x4fd118), MDIO PHY addresses
+ * (plat-zxylzb_9128S.ko uni_phy @ .data+0x88), and GPIO tables (vmlinux.bin @ 0xc070ba2c,
+ * board ID 0x95 F6600P V9.1.41) were verified directly from a full 128 MiB flash dump.
+ */
+
+/dts-v1/;
+
+#include "zte/zx279128s.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "ZTE ZXHN F6600P";
+	compatible = "zte,zxhn-f6600p", "zte,zx279128s";
+
+	aliases {
+		ethernet0 = &gmac;
+		serial0 = &serial0;
+		serial1 = &serial1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_wan;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 0x10000000>; /* 256 MiB DDR3 */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		 * GPIO table extracted from stock vmlinux.bin @ 0xc070ba2c
+		 * (Board ID 0x95, F6600P V9.1.41) + bspdriver.ko:
+		 *   Flat GPIO = bank * 16 + pin (6 banks gpio0..gpio5 of 16 lines each).
+		 *   All LEDs on F6600P are active-low (LED_POWER init=0 at boot, others init=1).
+		 */
+		led_power: led-power {
+			label = "f6600p:green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_wan: led-wan {
+			label = "f6600p:green:wan";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&gpio3 12 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_pon: led-pon {
+			label = "f6600p:green:pon";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio2 8 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_los: led-los {
+			label = "f6600p:red:los";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_FAULT;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_wlan: led-wlan {
+			label = "f6600p:green:wlan";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_wlan5g: led-wlan5g {
+			label = "f6600p:green:wlan5g";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_wps_green: led-wps-green {
+			label = "f6600p:green:wps";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_wps_red: led-wps-red {
+			label = "f6600p:red:wps";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_usb: led-usb {
+			label = "f6600p:green:usb";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&gpio3 15 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_phone: led-phone {
+			label = "f6600p:green:phone";
+			color = <LED_COLOR_ID_GREEN>;
+			function = "phone";
+			gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_lan1: led-lan1 {
+			label = "f6600p:green:lan1";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio3 8 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_lan2: led-lan2 {
+			label = "f6600p:green:lan2";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio3 9 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_lan3: led-lan3 {
+			label = "f6600p:green:lan3";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio3 10 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_lan4: led-lan4 {
+			label = "f6600p:green:lan4";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio3 11 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	keys {
+		/*
+		 * Polled mode is mandatory on ZX279128S: IRQ mode on the ZTE GPIO
+		 * controller triggers an RCU lockup on button press.
+		 * Input pins from vmlinux @ 0xc070ba2c (Board ID 0x95):
+		 *   - Flat GPIO 18 (&gpio1  2): KEY_RESTORE (Reset)
+		 *   - Flat GPIO  3 (&gpio0  3): WPS_SW (WPS)
+		 *   - Flat GPIO  1 (&gpio0  1): WLAN_SW (Wi-Fi toggle)
+		 */
+		compatible = "gpio-keys-polled";
+		poll-interval = <50>;
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		key-wps {
+			label = "wps";
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		key-wlan {
+			label = "wlan";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+/*
+ * 4x integrated Gigabit PHYs confirmed from stock plat-zxylzb_9128S.ko
+ * uni_phy @ .data+0x88 ({0x0a, 0x0b, 0x0c, 0x0d}) and /proc/interrupts (gphy0..gphy3 on GIC 71..74).
+ * Verified 1-to-1 chassis mapping:
+ *   gmac_port0 (phy10) = Chassis LAN1 -> OpenWrt "wan" (GPON unused)
+ *   gmac_port1 (phy11) = Chassis LAN2 -> OpenWrt "lan1"
+ *   gmac_port2 (phy12) = Chassis LAN3 -> OpenWrt "lan2"
+ *   gmac_port3 (phy13) = Chassis LAN4 -> OpenWrt "lan3"
+ * Factory MAC addresses live in /tagparam/paramtag (offsets 0x62 LAN, 0x6e WAN)
+ * and are applied by /etc/board.d/02_network.
+ */
+&gmac {
+	interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>;
+	status = "okay";
+};
+
+&gmac_port0 {
+	label = "wan";
+	phy-handle = <&phy10>;
+	phy-mode = "internal";
+	status = "okay";
+};
+
+&gmac_port1 {
+	label = "lan1";
+	phy-handle = <&phy11>;
+	phy-mode = "internal";
+	status = "okay";
+};
+
+&gmac_port2 {
+	label = "lan2";
+	phy-handle = <&phy12>;
+	phy-mode = "internal";
+	status = "okay";
+};
+
+&gmac_port3 {
+	label = "lan3";
+	phy-handle = <&phy13>;
+	phy-mode = "internal";
+	status = "okay";
+};
+
+&gmac_port4 {
+	status = "disabled";
+};
+
+&serial0 {
+	status = "okay";
+};
+
+&serial1 {
+	status = "okay";
+};
+
+/* USB 2.0 / 3.0 host (dwc3 @ 0x09100000, GIC SPI 50 / IRQ 82) */
+&usb {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	phy10: ethernet-phy@a {
+		reg = <10>;
+	};
+
+	phy11: ethernet-phy@b {
+		reg = <11>;
+	};
+
+	phy12: ethernet-phy@c {
+		reg = <12>;
+	};
+
+	phy13: ethernet-phy@d {
+		reg = <13>;
+	};
+};
+
+/*
+ * MediaTek Filogic 630 (MT7916AN) dual-band Wi-Fi 6:
+ *   PCIe0 (0000:00:00.0, 14c3:7906, GIC 95) — reset GPIO 55 (&gpio3 7, slot 45 WLAN_MT7613_RST)
+ *   PCIe1 (0000:01:00.0, 14c3:790a, GIC 110) — ext-HIF on same chip
+ * Calibration data is stored in mtd "wlan" (0x00a00000) as /wlan/caldata (196,608 B).
+ */
+&pcie0 {
+	reset-gpios = <&gpio3 7 GPIO_ACTIVE_LOW>;
+	phys = <&crm1_pcie0_phy>;
+	phy-names = "pcie";
+	status = "okay";
+};
+
+&pcie1 {
+	phys = <&crm1_pcie1_phy>;
+	phy-names = "pcie";
+	status = "okay";
+};
+
+/ {
+	soc {
+		crm1: syscon@94000000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x94000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			reboot {
+				compatible = "syscon-reboot";
+				offset = <0x44>;
+				mask = <0x1>;
+				value = <0x1>;
+			};
+
+			crm1_pcie0_phy: phy@0 {
+				compatible = "zte,zx279128s-pcie-phy";
+				reg = <0>;
+				#phy-cells = <0>;
+			};
+
+			crm1_pcie1_phy: phy@1 {
+				compatible = "zte,zx279128s-pcie-phy";
+				reg = <1>;
+				#phy-cells = <0>;
+			};
+		};
+	};
+};
+
+&spifc {
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		spi-rx-bus-width = <2>;
+		spi-tx-bus-width = <1>;
+
+		/*
+		 * 128 MiB SPI-NAND (2 KiB page, 128 KiB erase block).
+		 *
+		 * Exact hardware partition table extracted from stock vmlinux.bin @ 0x4fd118:
+		 *   0x00000000 .. 0x00200000 ( 2 MiB): u-boot          (stock mtd1)
+		 *   0x00200000 .. 0x00600000 ( 4 MiB): others          (stock mtd2, BootImageNum selector)
+		 *   0x00600000 .. 0x00a00000 ( 4 MiB): parameter tags  (stock mtd3, /tagparam JFFS2)
+		 *   0x00a00000 .. 0x00e00000 ( 4 MiB): wlan            (stock mtd4, /wlan JFFS2 caldata)
+		 *   0x00e00000 .. 0x01600000 ( 8 MiB): usercfg         (stock mtd5)
+		 *   0x01600000 .. 0x01a00000 ( 4 MiB): middleware      (stock mtd6)
+		 *   0x01a00000 .. 0x03a00000 (32 MiB): kernel1         (stock mtd7, Slot 0 — OpenWrt via Reset TFTP)
+		 *   0x03a00000 .. 0x05a00000 (32 MiB): kernel2         (stock mtd8, Slot 1 — untouched Stock)
+		 *   0x05a00000 .. 0x05c00000 ( 2 MiB): Plugin          (stock mtd10)
+		 *   0x05c00000 .. 0x07000000 (20 MiB): Pluginlog       (stock mtd11, empty -> rootfs_data)
+		 *
+		 * OpenWrt occupies Slot 0 (kernel1 @ 0x01a00000, flashed via U-Boot Reset-button
+		 * TFTP recovery 'downver version'), preserving Stock untouched in Slot 1 (0x03a00000):
+		 *   - 0x01a00000..0x01f00000 ( 5 MiB): "kernel" (0x168 header + JFFS2 with /0uImage)
+		 *   - 0x01f00000..0x03a00000 (27 MiB): "rootfs" (SquashFS, index 3 = /dev/mtdblock3)
+		 * Writable JFFS2 overlay ("rootfs_data") is placed in the empty 20 MiB Pluginlog
+		 * partition (0x05c00000) so U-Boot's payload CRC32 over kernel1 remains intact across reboots.
+		 */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000000 0x00200000>;
+				read-only;
+			};
+
+			partition@1a00000 {
+				label = "kernel";
+				reg = <0x01a00000 0x00500000>;
+			};
+
+			partition@3a00000 {
+				label = "kernel2";
+				reg = <0x03a00000 0x02000000>;
+				read-only;
+			};
+
+			partition@1f00000 {
+				label = "rootfs";
+				reg = <0x01f00000 0x01b00000>;
+			};
+
+			partition@5c00000 {
+				/* Empty 20 MiB stock Pluginlog; used as writable JFFS2 rootfs_data overlay */
+				label = "rootfs_data";
+				reg = <0x05c00000 0x01400000>;
+			};
+
+			partition@200000 {
+				/* Holds BootImageNum=0x00000000 / 0x00000001 dual-slot selector */
+				label = "others";
+				reg = <0x00200000 0x00400000>;
+			};
+
+			partition@600000 {
+				/* JFFS2 mounted by vendor at /tagparam; holds paramtag (MACs) */
+				label = "tagparam";
+				reg = <0x00600000 0x00400000>;
+			};
+
+			partition@a00000 {
+				/* JFFS2 mounted by vendor at /wlan; holds caldata (196,608 B) */
+				label = "wlan";
+				reg = <0x00a00000 0x00400000>;
+			};
+
+			partition@e00000 {
+				label = "usercfg";
+				reg = <0x00e00000 0x00800000>;
+				read-only;
+			};
+
+			partition@1600000 {
+				label = "middleware";
+				reg = <0x01600000 0x00400000>;
+				read-only;
+			};
+
+			partition@5a00000 {
+				label = "plugin";
+				reg = <0x05a00000 0x00200000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&l2cc {
+	zte,l2c-io-read-lock;
+};
+
+/ {
+	soc {
+		soc_thermal: temp@94100034 {
+			compatible = "zxic,tempsensor";
+			reg = <0x94100034 0xc>;
+			#thermal-sensor-cells = <0>;
+		};
+	};
+	thermal-zones {
+		soc-thermal {
+			polling-delay-passive = <2000>;
+			polling-delay = <5000>;
+			thermal-sensors = <&soc_thermal>;
+
+			trips {
+				soc_crit: crit {
+					temperature = <110000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+		};
+	};
+};
