@@ -33,17 +33,21 @@ OpenWrt (`Linux 6.18.55`, `sanechips` target) board port, device tree, native `s
 ### Special Finding: Stock U-Boot TFTP Recovery Authentication (`TftpHandler`)
 Disassembling stage-2 `U-Boot V9.1.10P10N9` (`TftpHandler` @ `0x4602b380`) revealed two important quirks on post-2024 ISP-customized F6600P builds (`V9.1.10P2N7`):
 1. **Stage-2 U-Boot UART is stubbed:** `zte_serial` (`0x4603faec`) has `putc`/`getc`/`tstc` compiled as no-ops, so serial console produces no stage-2 output and cannot be interrupted via UART.
-2. **Reset-Button TFTP Recovery requires ZTE OACK `user`/`pass` auth:** Holding the Reset button for **5 seconds** on power-on triggers `downver version` (`ipaddr=192.168.1.1`, `serverip=192.168.1.100`, `fullfile=upgrade.bin`) with **zero RSA/signature verification** (only IEEE CRC32 over the `0x168` header and payload). However, when Reset-button recovery is active, `TftpHandler` enforces a custom **TFTP `OACK` authentication check** requiring `user` and `pass` options verified via AES-128 against U-Boot's `env_na` / `env_pa`. Standard TFTP servers (`dnsmasq`, `tftpd64`) do not send these options, causing U-Boot to abort immediately (`NetState = 3`) and reboot.
+2. **Reset-Button TFTP Recovery requires ZTE OACK `user`/`pass` auth (`root` / `root`):** Holding the Reset button for **5–6 seconds** on power-on triggers `downver version` (`ipaddr=192.168.1.1`, `serverip=192.168.1.100`, `fullfile=upgrade.bin`) with **zero RSA/signature verification** (only IEEE CRC32 over the `0x168` header and payload). However, when Reset-button recovery is active, `TftpHandler` enforces a custom **TFTP `OACK` authentication check** requiring `user` and `pass` options decrypted via AES-128-ECB with the public **NIST FIPS-197** example key (`2b7e151628aed2a6abf7158809cf4f3c`) and matched against `root` / `root` (decoded from `env_na`/`env_pa` = `=@@;`), yielding the 16-byte OACK token `74 2a 80 a9 22 ce 4b 66 6d 3a ba 66 11 6c 15 b9`. Standard TFTP servers (`dnsmasq`, `tftpd64`) do not send these options, causing U-Boot to abort immediately (`NetState = 3`) and reboot.
+   - Full protocol write-up and ready-to-use Python recovery TFTP server (`zte_tftp_server.py`): **[JingAr87/refactored-octo-waffle](https://github.com/JingAr87/refactored-octo-waffle)**
 
 Because **Secure Boot is OFF** (`non secure boot` / `non secure uboot`, zero RSA keys in SPL/U-Boot), there are **two initial installation paths**:
 
-### 1. First-Time Install — Option A: Reset-Button TFTP Recovery (requires ZTE OACK-capable TFTP server)
-1. Download `openwrt-sanechips-generic-zte_zxhn-f6600p-squashfs-factory.bin` from [Releases](../../releases), verify its SHA256 against `SHA256SUMS.txt`, and rename/serve it as **`upgrade.bin`**.
-2. Assign static IP **`192.168.1.100/24`** to your PC's Ethernet adapter and connect it to **LAN1–LAN4**.
-3. Start your ZTE OACK-authenticated TFTP server serving `upgrade.bin`.
-4. Power on the F6600P while holding the **Reset** button for **~5 seconds** until the TFTP transfer begins (`~13 MB/s`). Release Reset and wait ~60–90 seconds for U-Boot to flash Slot 0 and reboot into OpenWrt.
+### 1. First-Time Install — Option A: Reset-Button TFTP Recovery (Recommended, No Hardware Tools)
+1. Download `openwrt-sanechips-generic-zte_zxhn-f6600p-squashfs-factory.bin` from [Releases](../../releases), verify its SHA256 against `SHA256SUMS.txt`, and rename it to **`upgrade.bin`**.
+2. Assign static IP **`192.168.1.100/24`** (gateway `192.168.1.1`) to your PC's Ethernet adapter and connect it to **LAN1**.
+3. Run `zte_tftp_server.py` from [JingAr87/refactored-octo-waffle](https://github.com/JingAr87/refactored-octo-waffle) (sends the required `user`/`pass` OACK tokens for `root`/`root`):
+   ```sh
+   sudo python3 zte_tftp_server.py upgrade.bin   # Linux / macOS (or run as Administrator on Windows)
+   ```
+4. Power on the F6600P while holding the **Reset** button for **~6 seconds** until the TFTP transfer begins (`~13 MB/s`). Release Reset and wait ~60–90 seconds for U-Boot to flash Slot 0 and reboot into OpenWrt.
 
-### 1. First-Time Install — Option B: External SPI-NAND Programmer (No TFTP Auth Needed)
+### 1. First-Time Install — Option B: External SPI-NAND Programmer (Offline Fallback)
 If you do not have ZTE's TFTP OACK credentials, you can flash the SPI-NAND (`FORESEE F35SQB001G`, 3.3 V, WSON-8) directly with an external SPI-NAND programmer (e.g., XGecu T48 / RT809F / CH341A-style):
 1. Back up the full 128 MiB SPI-NAND dump first.
 2. Write `openwrt-sanechips-generic-zte_zxhn-f6600p-squashfs-factory.bin` to **`kernel1` (`0x01a00000`)**, leaving `u-boot` (`0x00000000`) and Stock `kernel2` (`0x03a00000`) untouched.

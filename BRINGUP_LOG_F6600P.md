@@ -76,7 +76,7 @@ Serial settings: `115200 8N1`, no flow control.
   - Updated `port/pack_f6600p.py` to use `mkfs.jffs2 -s 0x1000` (4096 B, matching Stock `dsize=4096`) and capped `banner <= 32 B` so `hdr[0xc8:0xca]` stays `0000`.
 
 ### B. First Live Boot & Full Hardware Verification
-- Flashed `openwrt-sanechips-generic-zte_zxhn-f6600p-squashfs-factory.bin` (`12,713,984 B` / `12.12 MiB`) via Reset-button TFTP recovery (`~13.4 MB/s`), using ZTE TFTP OACK authentication.
+- Flashed `openwrt-sanechips-generic-zte_zxhn-f6600p-squashfs-factory.bin` (`12,713,984 B` / `12.12 MiB`) via Reset-button TFTP recovery (`~13.4 MB/s`), using ZTE TFTP OACK authentication (`root` / `root` encrypted with the NIST FIPS-197 AES-128-ECB key; see [JingAr87/refactored-octo-waffle](https://github.com/JingAr87/refactored-octo-waffle)).
 - **Kernel & System:** `Linux OpenWrt 6.18.55 #0 SMP armv7l` booted cleanly on the first try; `248 MiB` usable RAM, `19.9 MiB` JFFS2 `/overlay` (`mtd4`, auto-split inside Slot 0 tail; `mtd5` renamed to read-only `pluginlog`).
 - **Ethernet (1-to-1 Chassis Mapping Verified):**
   - Chassis **LAN1** → `wan` (`phy 0x0a`), factory WAN MAC (`+0x6e`, DHCP tested live against upstream `192.168.0.x` router).
