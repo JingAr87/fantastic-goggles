@@ -2,7 +2,7 @@
 
 OpenWrt (`Linux 6.18.55`, `sanechips` target) board port, device tree, native `sysupgrade` handler, and `0x168` firmware container packer for the **ZTE ZXHN F6600P** (`HW V9.1.41`, TM / Unifi Malaysia AX3000 Wi-Fi 6 GPON ONT), configured as a Gigabit Ethernet router / AX3000 Wi-Fi 6 AP while preserving Stock firmware in the alternate flash slot for rollback.
 
-> **Status:** **Live-verified on hardware (`v2.0` IDM/NPP + PPE)!** All 4 Gigabit Ethernet ports (factory MACs + hardware NAT & Wi-Fi PPE/IDM offload), dual-band `MT7916AN` AX3000 Wi-Fi 6 (`HE40` + `HE160`), **USB 2.0 + USB 3.0 SuperSpeed (`5 Gbps`)**, on-die SoC thermal sensor, all 13 front-panel LEDs, persistent `19.0 MiB` JFFS2 overlay, Stock Slot 1 rollback (`x3060z-fwslot`), and **1-click LuCI/SSH `sysupgrade`** with config preservation are all verified on hardware.
+> **Status:** **Live-verified on hardware (`v2.0.1` IDM/NPP + PPE — ~940 Mbps UL / 700 Mbps peak DL on 5 GHz `HE160`)!** All 4 Gigabit Ethernet ports (factory MACs + hardware NAT & Wi-Fi PPE/IDM offload), dual-band `MT7916AN` AX3000 Wi-Fi 6 (`HE40` + `HE160`), **USB 2.0 + USB 3.0 SuperSpeed (`5 Gbps`)**, on-die SoC thermal sensor, all 13 front-panel LEDs, persistent `19.0 MiB` JFFS2 overlay, Stock Slot 1 rollback (`x3060z-fwslot`), and **1-click LuCI/SSH `sysupgrade`** are all verified on hardware.
 
 ---
 
@@ -72,7 +72,7 @@ To boot Stock Slot 1 (`BootImageNum=0x00000001`), switch the active slot in `oth
 ---
 
 ## Known Notes
-- **Hardware Acceleration & `v2.0` IDM/NPP + PPE Wi-Fi Offload:** Built on the same `v2.0` `ZX279128S` kernel stack as [D-Link DIR-X1860Z / DIR-X3060Z](https://github.com/JingAr87/laughing-waffle): Integrated DMA (`0x921c8000`, `GIC_SPI 38`) exposes `phy0-ap*` / `phy1-ap*` (`bp6`, `bp7`) directly to the hardware switch (`sbrg`) and Packet Processor (`PPE`) with `page_pool` zero-copy recycling and a minimal pre-GRO hook in `mt76_rx_complete()`. `ZX279128R`-specific NPP/TM/SMCT overrides are gated on `of_machine_is_compatible("zte,zx279128r")` so `ZX279128S` retains clean Gigabit RX/TX.
+- **Hardware Acceleration & `v2.0.1` IDM/NPP + PPE Wi-Fi Offload:** Built on the same `v2.0.1` `ZX279128S` kernel stack as [D-Link DIR-X1860Z / DIR-X3060Z](https://github.com/JingAr87/laughing-waffle): Integrated DMA (`0x921c8000`, `GIC_SPI 38`) exposes `phy0-ap*` / `phy1-ap*` (`bp6`, `bp7`) directly to the hardware Packet Processor (`PPE`) with `page_pool` zero-copy recycling and a minimal pre-GRO hook in `mt76_rx_complete()`. Uses stock `ZX279128S` `SMCT` (`11/11/128`), `UOPC` empty-resume (`0x1d8000 |= 8`), `0x380028 = 0x01070104`, and `0x3a0028 = 1600` (`wifi_mac_len`). Verified live over Gigabit WAN ↔ 5 GHz Wi-Fi: **440 Mbps UL / 476 Mbps avg (589 Mbps peak) DL on 80 MHz** and **~940 Mbps Gigabit line-rate UL / 700 Mbps peak DL on 160 MHz (`AX210`)** with `0` drops and `0` resets.
 - **Deferred Wi-Fi Startup (~60 s):** `mt7915e` is bound after early boot (`S95`) so SSH/LuCI always come up first. `11-mt76-caldata` automatically extracts `/wlan/caldata` (`196,608 B`) from `mtd8` (`wlan`) to `/lib/firmware/mediatek/mt7916_eeprom.bin`.
 - **Chassis Port Mapping:** Physical **LAN1** → `wan` (`phy 0x0a`, factory WAN MAC from `/tagparam/paramtag` `+0x6e`), **LAN2 / LAN3 / LAN4** → `lan1 / lan2 / lan3` (`phy 0x0b..0x0d`, factory LAN MAC `+0x62`).
 - **On-Die SoC Thermal Sensor:** `temp@94100034` (`zxic,tempsensor`) exposes live SoC temperature at `/sys/class/thermal/thermal_zone0/temp` alongside `mt7915_phy0`/`phy1` in `/sys/class/hwmon/`.

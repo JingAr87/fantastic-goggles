@@ -392,9 +392,10 @@
 			};
 
 			partition@5c00000 {
-				/* Empty 20 MiB stock Pluginlog; used as writable JFFS2 rootfs_data overlay */
-				label = "rootfs_data";
+				/* Keep stock Pluginlog read-only so OpenWrt uses a single auto-split rootfs_data in mtd3 */
+				label = "pluginlog";
 				reg = <0x05c00000 0x01400000>;
+				read-only;
 			};
 
 			partition@200000 {

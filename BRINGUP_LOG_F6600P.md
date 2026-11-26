@@ -109,4 +109,7 @@ Serial settings: `115200 8N1`, no flow control.
 - **IDM/NPP + PPE Wi-Fi ↔ Ethernet Hardware Offload (`GIC_SPI 38`):** Added `<GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>` to `&gmac` in `port/dts/zx279128s-zte-f6600p.dts`, enabling the `ZX279128S` Integrated DMA (`0x921c8000`) fastpath with `page_pool` zero-copy recycling and HW PPE resolution for `phy0-ap0` (`bp6`) and `phy1-ap0` (`bp7`).
 - **`ZX279128S` vs `ZX279128R` Ethernet Init Gating:** Gated `ZX279128R`-specific NPP/TM/SMCT (`11/220/200`) and per-port MAC-reset register init in `zx279128s-main.c` on `of_machine_is_compatible("zte,zx279128r")`, preserving clean Gigabit RX/TX on `ZX279128S` (`plat-zxylzb_9128S.ko` defaults).
 - **On-Die Thermal Sensor:** Live SoC temperature exposed at `/sys/class/thermal/thermal_zone0/temp` (`temp@94100034`) alongside `MT7916AN` `hwmon` sensors.
-- **Verified live on hardware:** `wan` (`LAN1`) + `lan1..3` (`LAN2..4`) Gigabit full-duplex, `ppe_flows` active, `idm_wifi_devs=phy0-ap0(bp6,s0) phy1-ap0(bp7,s0)`, `hw_resets=0`, persistent `19.0 MiB` `/overlay`.
+- **Verified live on hardware (`v2.0.1`):**
+  - Stock `ZX279128S` `SMCT` (`11/11/128`), `UOPC` empty-resume (`0x1d8000 |= 8`), `0x380028 = 0x01070104`, `0x3a0028 = 1600`, SMP `TX_DONE_CNT` reclaim barrier, and `skb_reset_mac_header()` order fix in `zx_idm_poll()`.
+  - **WAN ↔ 5 GHz Wi-Fi `iperf3` (`HE80`):** **440 Mbps UL** (`786 MB` / 15 s) and **476 Mbps avg / 589 Mbps peak DL** (`852 MB` / 15 s), `idm_rx_pkts=1,203,092`, `idm_tx_l3=592,062`, `idm_rx_drop=0`, `ppe_add_skip=0`, `hw_resets=0`, SoC `63 °C`.
+  - **WAN ↔ 5 GHz Wi-Fi `iperf3` (`HE160`, Intel AX210):** **~940 Mbps Gigabit line-rate UL** and **700 Mbps peak DL** (`600–700 Mbps` DL on 160 MHz phone).
