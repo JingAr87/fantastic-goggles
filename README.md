@@ -4,6 +4,8 @@ OpenWrt (`Linux 6.18.55`, `sanechips` target) board port, device tree, native `s
 
 > **Status:** **Live-verified on hardware (`v2.0.1` IDM/NPP + PPE — ~580–700 Mbps DL / ~415–440 Mbps UL on 5 GHz Wi-Fi)!** All 4 Gigabit Ethernet ports (factory MACs + hardware NAT & Wi-Fi PPE/IDM offload), dual-band `MT7916AN` AX3000 Wi-Fi 6 (`HE40` + `HE160`), **USB 2.0 + USB 3.0 SuperSpeed (`5 Gbps`)**, on-die SoC thermal sensor, all 13 front-panel LEDs, persistent `19.0 MiB` JFFS2 overlay, Stock Slot 1 rollback (`x3060z-fwslot`), and **1-click LuCI/SSH `sysupgrade`** are all verified on hardware.
 
+![OpenWrt LuCI Status on ZTE ZXHN F6600P](images/f6600p-luci-status.png)
+
 ---
 
 ## Hardware Support Matrix
@@ -21,6 +23,27 @@ OpenWrt (`Linux 6.18.55`, `sanechips` target) board port, device tree, native `s
 | **LuCI `sysupgrade`** | Supported & verified (preserves settings, no TFTP needed after initial install) |
 | **SoC & Wi-Fi Thermal** | Live SoC temp (`/sys/class/thermal/thermal_zone0/temp`, `temp@94100034`) + `MT7916AN` `hwmon` |
 | **LEDs & Buttons** | All 13 front-panel cutouts (14 LED entries) + polled Reset, WPS, and WLAN buttons verified |
+
+---
+
+## Hardware Photos & UART Pinout
+
+| Top-Side PCB | Bottom-Side PCB |
+| :---: | :---: |
+| ![ZTE ZXHN F6600P Top-Side PCB](images/f6600p-pcb-top.jpg) | ![ZTE ZXHN F6600P Bottom-Side PCB](images/f6600p-pcb-bottom.jpg) |
+| `ZX279128S` + `MT7916AN` (under heatsinks), 4× GbE, POTS, USB, GPON SC/APC fiber pigtail, and 4 internal antennas | `FORESEE F35SQB001G` WSON-8 SPI-NAND flash (`D1A1`/`D4A1` top-right) and front-panel LED footprints (`POWER`–`USB`) |
+
+### UART Pinout (`115200 8N1`, 3.3 V Logic)
+
+![ZTE ZXHN F6600P UART Pinout](images/f6600p-uart-pinout.jpg)
+
+4-pin UART header (`X1A3` area, top to bottom in the photo above; labels correspond to the USB-UART adapter leads):
+1. **`GND`** — Ground
+2. **`TXD`** — Router `RX` (connect USB-UART `TXD`; use a 3.3 V adapter or voltage divider)
+3. **`RXD`** — Router `TX` (connect USB-UART `RXD`)
+4. **`VCC`** — 3.3 V (square pad, **leave unconnected**)
+
+*(Note: SPL prints early boot status on UART, while stage-2 U-Boot serial is stubbed — see [`BRINGUP_LOG_F6600P.md`](BRINGUP_LOG_F6600P.md#1-verified-hardware--uart-pinout).)*
 
 ---
 
@@ -85,6 +108,7 @@ To boot Stock Slot 1 (`BootImageNum=0x00000001`), switch the active slot in `oth
   - [`port/pack_f6600p.py`](port/pack_f6600p.py) — Standalone `0x168` slot-header packer & verifier (`360/360` byte-exact self-test against stock `kernel1`/`kernel2`).
   - [`port/image/Makefile.f6600p`](port/image/Makefile.f6600p) — OpenWrt `target/linux/sanechips/image/Makefile` device stanza.
   - [`port/base-files/`](port/base-files/) — Calibration loader (`11-mt76-caldata`), factory MAC loader (`02_network`), LED triggers (`01_leds`), native `sysupgrade` (`lib/upgrade/platform.sh`), and slot inspector (`x3060z-fwslot`).
+- [`images/`](images/) — EXIF-stripped hardware PCB photos, labeled UART pinout, and LuCI status screenshot.
 - [`STAGE1_2_REPORT.md`](STAGE1_2_REPORT.md) — SPI-NAND partition inventory & Non-Secure U-Boot verification.
 - [`PROJECT_FINDINGS_F6600P.md`](PROJECT_FINDINGS_F6600P.md) — Offline hardware, partition, GPIO/LED, and `0x168` slot-header reverse-engineering.
 - [`BRINGUP_LOG_F6600P.md`](BRINGUP_LOG_F6600P.md) — UART pinout, stage-2 U-Boot disassembly, TFTP OACK auth root cause, and live bring-up log.
